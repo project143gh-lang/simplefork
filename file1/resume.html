@@ -1,0 +1,2509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Your Name — Resume</title>
+
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #080808;
+      --bg-soft: #101010;
+      --card: rgba(255,255,255,.055);
+      --text: #f5f5f5;
+      --muted: #888;
+      --line: rgba(255,255,255,.12);
+      --accent: #ffffff;
+      --green: #6dff9c;
+      --blue: #8ab4ff;
+
+      --ease: cubic-bezier(.22,1,.36,1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
+
+    body {
+      cursor: default;
+    }
+
+    /* =====================================================
+       THREE.JS
+    ===================================================== */
+
+    #three-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    #three-bg canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .gradient {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+
+      background:
+        radial-gradient(
+          circle at 20% 20%,
+          rgba(255,255,255,.08),
+          transparent 30%
+        ),
+        radial-gradient(
+          circle at 80% 70%,
+          rgba(100,120,255,.06),
+          transparent 35%
+        );
+
+      mix-blend-mode: screen;
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      opacity: .035;
+
+      background-image:
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+    }
+
+    /* =====================================================
+       APP
+    ===================================================== */
+
+    #app {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* =====================================================
+       TOP BAR
+    ===================================================== */
+
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+
+      width: 100%;
+      height: 75px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      padding: 0 5vw;
+
+      z-index: 50;
+
+      border-bottom: 1px solid rgba(255,255,255,.08);
+
+      background: linear-gradient(
+        to bottom,
+        rgba(8,8,8,.75),
+        transparent
+      );
+
+      backdrop-filter: blur(8px);
+    }
+
+    .logo {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .availability {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+
+      font-size: 11px;
+      color: var(--muted);
+
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+
+    .availability-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+
+      box-shadow:
+        0 0 0 5px rgba(109,255,156,.08),
+        0 0 18px rgba(109,255,156,.5);
+
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% {
+        box-shadow:
+          0 0 0 4px rgba(109,255,156,.08),
+          0 0 12px rgba(109,255,156,.3);
+      }
+
+      50% {
+        box-shadow:
+          0 0 0 8px rgba(109,255,156,.02),
+          0 0 25px rgba(109,255,156,.6);
+      }
+    }
+
+    /* =====================================================
+       SLIDES
+    ===================================================== */
+
+    #slides {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+
+      padding:
+        120px
+        9vw
+        80px;
+
+      display: flex;
+      align-items: center;
+
+      opacity: 0;
+      visibility: hidden;
+
+      transform:
+        translateY(70px)
+        scale(.97);
+
+      transition:
+        opacity .7s var(--ease),
+        transform .9s var(--ease),
+        visibility .7s;
+
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+
+      transform:
+        translateY(0)
+        scale(1);
+    }
+
+    .slide-content {
+      width: min(1150px, 100%);
+      margin: auto;
+    }
+
+    /* =====================================================
+       HERO
+    ===================================================== */
+
+    .hero {
+      min-height: 100%;
+    }
+
+    .hero-content {
+      max-width: 1000px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      color: var(--muted);
+
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .2em;
+
+      margin-bottom: 25px;
+
+      transform: translateY(20px);
+      opacity: 0;
+
+      transition:
+        .8s .1s var(--ease);
+    }
+
+    .active .eyebrow {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hero h1 {
+      font-size: clamp(65px, 11vw, 165px);
+
+      line-height: .82;
+
+      letter-spacing: -.075em;
+
+      font-weight: 700;
+
+      max-width: 1000px;
+
+      transform: translateY(40px);
+      opacity: 0;
+
+      transition:
+        1s .15s var(--ease);
+    }
+
+    .active .hero h1 {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hero-role {
+      margin-top: 35px;
+
+      max-width: 650px;
+
+      font-size:
+        clamp(17px, 2vw, 24px);
+
+      line-height: 1.5;
+
+      color: var(--muted);
+
+      transform: translateY(30px);
+      opacity: 0;
+
+      transition:
+        .9s .3s var(--ease);
+    }
+
+    .active .hero-role {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hero-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+
+      margin-top: 35px;
+
+      transform: translateY(25px);
+      opacity: 0;
+
+      transition:
+        .8s .45s var(--ease);
+    }
+
+    .active .hero-links {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .icon-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+
+      padding: 11px 15px;
+
+      color: var(--text);
+      text-decoration: none;
+
+      font-size: 12px;
+
+      border: 1px solid var(--line);
+      border-radius: 100px;
+
+      background: rgba(255,255,255,.04);
+
+      transition: .3s;
+    }
+
+    .icon-link:hover {
+      background: white;
+      color: black;
+
+      transform: translateY(-3px);
+    }
+
+    /* =====================================================
+       SECTION HEADER
+    ===================================================== */
+
+    .section-number {
+      color: var(--muted);
+
+      font-size: 11px;
+      letter-spacing: .2em;
+
+      margin-bottom: 15px;
+    }
+
+    .section-title {
+      font-size:
+        clamp(40px, 6vw, 80px);
+
+      letter-spacing: -.06em;
+      line-height: .95;
+
+      margin-bottom: 50px;
+    }
+
+    /* =====================================================
+       EXPERIENCE
+    ===================================================== */
+
+    .experience-list {
+      max-width: 1000px;
+    }
+
+    .experience-item {
+      display: grid;
+      grid-template-columns: 150px 1fr auto;
+
+      gap: 30px;
+
+      padding: 25px 0;
+
+      border-top: 1px solid var(--line);
+
+      transform: translateX(-30px);
+      opacity: 0;
+
+      transition:
+        .8s var(--ease);
+    }
+
+    .experience-item:last-child {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .active .experience-item {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .active .experience-item:nth-child(1) {
+      transition-delay: .15s;
+    }
+
+    .active .experience-item:nth-child(2) {
+      transition-delay: .25s;
+    }
+
+    .active .experience-item:nth-child(3) {
+      transition-delay: .35s;
+    }
+
+    .job-date {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .job-title {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .job-company {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .job-description {
+      max-width: 430px;
+
+      color: var(--muted);
+      font-size: 13px;
+
+      line-height: 1.6;
+    }
+
+    /* =====================================================
+       PROJECTS
+    ===================================================== */
+
+    .project-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+      gap: 15px;
+
+      max-width: 1000px;
+    }
+
+    .project-card {
+      position: relative;
+
+      padding: 28px;
+
+      min-height: 210px;
+
+      border: 1px solid var(--line);
+
+      border-radius: 18px;
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(255,255,255,.08),
+          rgba(255,255,255,.025)
+        );
+
+      backdrop-filter: blur(14px);
+
+      overflow: hidden;
+
+      transform:
+        translateY(35px)
+        rotateX(5deg);
+
+      opacity: 0;
+
+      transition:
+        .8s var(--ease);
+    }
+
+    .active .project-card {
+      opacity: 1;
+
+      transform:
+        translateY(0)
+        rotateX(0);
+    }
+
+    .active .project-card:nth-child(1) {
+      transition-delay: .1s;
+    }
+
+    .active .project-card:nth-child(2) {
+      transition-delay: .2s;
+    }
+
+    .active .project-card:nth-child(3) {
+      transition-delay: .3s;
+    }
+
+    .active .project-card:nth-child(4) {
+      transition-delay: .4s;
+    }
+
+    .project-card::before {
+      content: "";
+
+      position: absolute;
+
+      width: 180px;
+      height: 180px;
+
+      right: -80px;
+      bottom: -100px;
+
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle,
+          rgba(255,255,255,.15),
+          transparent 65%
+        );
+
+      transition: .5s;
+    }
+
+    .project-card:hover::before {
+      transform: scale(2);
+    }
+
+    .project-icon {
+      width: 40px;
+      height: 40px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 10px;
+
+      border: 1px solid var(--line);
+
+      margin-bottom: 30px;
+    }
+
+    .project-card h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .project-card p {
+      color: var(--muted);
+
+      font-size: 13px;
+
+      line-height: 1.6;
+
+      max-width: 400px;
+    }
+
+    .project-arrow {
+      position: absolute;
+
+      right: 25px;
+      top: 25px;
+
+      color: var(--muted);
+    }
+
+    /* =====================================================
+       SKILLS
+    ===================================================== */
+
+    .skills-layout {
+      display: grid;
+
+      grid-template-columns:
+        1fr 1fr;
+
+      gap: 80px;
+
+      max-width: 950px;
+    }
+
+    .skill-group {
+      margin-bottom: 35px;
+    }
+
+    .skill-group h3 {
+      color: var(--muted);
+
+      font-size: 11px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .18em;
+
+      margin-bottom: 15px;
+    }
+
+    .skill-tags {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 8px;
+    }
+
+    .skill {
+      padding: 9px 13px;
+
+      border: 1px solid var(--line);
+
+      border-radius: 100px;
+
+      background: rgba(255,255,255,.03);
+
+      font-size: 12px;
+
+      transition: .25s;
+    }
+
+    .skill:hover {
+      background: white;
+      color: black;
+
+      transform:
+        translateY(-3px)
+        rotate(-2deg);
+    }
+
+    /* =====================================================
+       EDUCATION
+    ===================================================== */
+
+    .education {
+      max-width: 900px;
+    }
+
+    .education-row {
+      display: grid;
+
+      grid-template-columns:
+        150px 1fr;
+
+      gap: 40px;
+
+      padding: 30px 0;
+
+      border-top: 1px solid var(--line);
+
+      opacity: 0;
+      transform: translateY(25px);
+
+      transition: .8s var(--ease);
+    }
+
+    .active .education-row {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .active .education-row:nth-child(2) {
+      transition-delay: .15s;
+    }
+
+    .active .education-row:nth-child(3) {
+      transition-delay: .3s;
+    }
+
+    .education-year {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .education-row h3 {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .education-row p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* =====================================================
+       CONTACT
+    ===================================================== */
+
+    .contact-slide {
+      text-align: center;
+    }
+
+    .contact-slide .slide-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .contact-slide h2 {
+      font-size:
+        clamp(55px, 10vw, 140px);
+
+      line-height: .85;
+
+      letter-spacing: -.07em;
+
+      max-width: 900px;
+
+      margin-bottom: 35px;
+
+      transform: scale(.9);
+      opacity: 0;
+
+      transition: 1s var(--ease);
+    }
+
+    .active.contact-slide h2 {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .contact-email {
+      font-size: 18px;
+
+      color: var(--muted);
+
+      text-decoration: none;
+
+      border-bottom: 1px solid var(--muted);
+
+      padding-bottom: 5px;
+
+      transition: .3s;
+    }
+
+    .contact-email:hover {
+      color: white;
+      border-color: white;
+    }
+
+    /* =====================================================
+       SIDE NAV
+    ===================================================== */
+
+    .side-nav {
+      position: fixed;
+
+      right: 30px;
+      top: 50%;
+
+      transform: translateY(-50%);
+
+      z-index: 100;
+
+      display: flex;
+
+      flex-direction: column;
+
+      gap: 10px;
+    }
+
+    .nav-dot {
+      position: relative;
+
+      width: 7px;
+      height: 7px;
+
+      border: 0;
+
+      border-radius: 50%;
+
+      background: #555;
+
+      cursor: pointer;
+
+      transition: .3s;
+    }
+
+    .nav-dot::after {
+      content: attr(data-label);
+
+      position: absolute;
+
+      right: 20px;
+      top: 50%;
+
+      transform:
+        translateY(-50%)
+        translateX(5px);
+
+      white-space: nowrap;
+
+      font-size: 10px;
+
+      color: var(--muted);
+
+      opacity: 0;
+
+      pointer-events: none;
+
+      transition: .2s;
+    }
+
+    .nav-dot:hover::after {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
+
+    .nav-dot.active {
+      background: white;
+
+      box-shadow:
+        0 0 0 5px rgba(255,255,255,.08);
+    }
+
+    /* =====================================================
+       SLIDE COUNTER
+    ===================================================== */
+
+    .counter {
+      position: fixed;
+
+      left: 5vw;
+      bottom: 30px;
+
+      z-index: 50;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 12px;
+
+      font-size: 11px;
+
+      color: var(--muted);
+
+      letter-spacing: .12em;
+    }
+
+    .counter-line {
+      width: 50px;
+      height: 1px;
+
+      background: var(--line);
+
+      position: relative;
+    }
+
+    .counter-progress {
+      position: absolute;
+
+      left: 0;
+      top: 0;
+
+      height: 100%;
+
+      width: 0%;
+
+      background: white;
+
+      transition: .6s var(--ease);
+    }
+
+    /* =====================================================
+       SCROLL HINT
+    ===================================================== */
+
+    .scroll-hint {
+      position: fixed;
+
+      right: 5vw;
+      bottom: 28px;
+
+      z-index: 50;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 9px;
+
+      color: var(--muted);
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .15em;
+    }
+
+    .scroll-icon {
+      animation: bounce 1.7s infinite;
+    }
+
+    @keyframes bounce {
+      0%,100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(5px);
+      }
+    }
+
+    /* =====================================================
+       FLOATING CSS ORBS
+    ===================================================== */
+
+    .floating-orb {
+      position: fixed;
+
+      z-index: 3;
+
+      border-radius: 50%;
+
+      pointer-events: none;
+
+      filter: blur(1px);
+
+      opacity: .18;
+    }
+
+    .orb-1 {
+      width: 180px;
+      height: 180px;
+
+      right: 10%;
+      top: 15%;
+
+      background:
+        radial-gradient(
+          circle at 30% 30%,
+          white,
+          transparent 65%
+        );
+
+      animation:
+        floatOne 9s ease-in-out infinite;
+    }
+
+    .orb-2 {
+      width: 100px;
+      height: 100px;
+
+      left: 12%;
+      bottom: 15%;
+
+      background:
+        radial-gradient(
+          circle at 30% 30%,
+          #829fff,
+          transparent 70%
+        );
+
+      animation:
+        floatTwo 12s ease-in-out infinite;
+    }
+
+    @keyframes floatOne {
+      0%,100% {
+        transform:
+          translate3d(0,0,0)
+          scale(1);
+      }
+
+      50% {
+        transform:
+          translate3d(-50px,40px,0)
+          scale(1.15);
+      }
+    }
+
+    @keyframes floatTwo {
+      0%,100% {
+        transform:
+          translate3d(0,0,0)
+          rotate(0);
+      }
+
+      50% {
+        transform:
+          translate3d(40px,-50px,0)
+          rotate(180deg);
+      }
+    }
+
+    /* =====================================================
+       MOBILE
+    ===================================================== */
+
+    @media (max-width: 800px) {
+
+      .topbar {
+        height: 60px;
+        padding: 0 20px;
+      }
+
+      .availability {
+        display: none;
+      }
+
+      .slide {
+        padding:
+          90px
+          25px
+          80px;
+      }
+
+      .hero h1 {
+        font-size: clamp(58px, 18vw, 110px);
+      }
+
+      .hero-role {
+        font-size: 17px;
+      }
+
+      .side-nav {
+        right: 15px;
+      }
+
+      .nav-dot::after {
+        display: none;
+      }
+
+      .experience-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .job-description {
+        margin-top: 10px;
+      }
+
+      .project-grid {
+        grid-template-columns: 1fr;
+        max-height: 65vh;
+        overflow: auto;
+        padding-right: 5px;
+      }
+
+      .project-card {
+        min-height: 170px;
+      }
+
+      .skills-layout {
+        grid-template-columns: 1fr;
+        gap: 20px;
+
+        max-height: 65vh;
+        overflow: auto;
+      }
+
+      .education-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .scroll-hint {
+        display: none;
+      }
+
+      .counter {
+        left: 25px;
+        bottom: 20px;
+      }
+
+      .section-title {
+        margin-bottom: 30px;
+      }
+    }
+
+    /* =====================================================
+       PRINT
+    ===================================================== */
+
+    @media print {
+
+      html,
+      body {
+        overflow: visible;
+        height: auto;
+        background: white;
+        color: black;
+      }
+
+      #three-bg,
+      .gradient,
+      .noise,
+      .topbar,
+      .side-nav,
+      .counter,
+      .scroll-hint,
+      .floating-orb {
+        display: none !important;
+      }
+
+      .slide {
+        position: relative;
+
+        opacity: 1 !important;
+        visibility: visible !important;
+
+        transform: none !important;
+
+        min-height: auto;
+
+        page-break-after: always;
+
+        padding: 40px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- =====================================================
+       THREE.JS BACKGROUND
+  ===================================================== -->
+
+  <div id="three-bg"></div>
+
+  <div class="gradient"></div>
+  <div class="noise"></div>
+
+  <!-- Floating CSS elements -->
+  <div class="floating-orb orb-1"></div>
+  <div class="floating-orb orb-2"></div>
+
+
+  <!-- =====================================================
+       APP
+  ===================================================== -->
+
+  <div id="app">
+
+    <!-- TOP BAR -->
+
+    <header class="topbar">
+
+      <div class="logo">
+        YN
+      </div>
+
+      <div class="availability">
+
+        <span class="availability-dot"></span>
+
+        Available for opportunities
+
+      </div>
+
+    </header>
+
+
+    <!-- ===================================================
+         SLIDES
+    =================================================== -->
+
+    <main id="slides">
+
+
+      <!-- =================================================
+           SLIDE 01 — HERO
+      ================================================= -->
+
+      <section
+        class="slide hero active"
+        data-index="0"
+        data-name="Intro"
+      >
+
+        <div class="slide-content hero-content">
+
+          <div class="eyebrow">
+
+            <i data-lucide="sparkles" size="14"></i>
+
+            Product Designer · Developer
+
+          </div>
+
+          <h1>
+            Your<br />
+            Name.
+          </h1>
+
+          <p class="hero-role">
+
+            I design and build digital products
+            that feel simple, useful and memorable.
+
+          </p>
+
+          <div class="hero-links">
+
+            <a
+              class="icon-link"
+              href="mailto:hello@example.com"
+            >
+
+              <i data-lucide="mail"></i>
+
+              Email
+
+            </a>
+
+            <a
+              class="icon-link"
+              href="https://github.com"
+              target="_blank"
+            >
+
+              <i data-lucide="github"></i>
+
+              GitHub
+
+            </a>
+
+            <a
+              class="icon-link"
+              href="https://linkedin.com"
+              target="_blank"
+            >
+
+              <i data-lucide="linkedin"></i>
+
+              LinkedIn
+
+            </a>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           SLIDE 02 — ABOUT
+      ================================================= -->
+
+      <section
+        class="slide"
+        data-index="1"
+        data-name="About"
+      >
+
+        <div class="slide-content">
+
+          <div class="section-number">
+            01 / ABOUT
+          </div>
+
+          <h2 class="section-title">
+            Building things<br />
+            with intention.
+          </h2>
+
+          <div
+            style="
+              max-width:800px;
+              color:#999;
+              font-size:clamp(18px,2.3vw,28px);
+              line-height:1.5;
+              letter-spacing:-.025em;
+            "
+          >
+
+            I'm a multidisciplinary designer and developer
+            who enjoys turning complex problems into clear,
+            elegant experiences.
+
+            <br /><br />
+
+            My work sits somewhere between
+            <span style="color:white">
+              design, technology and business.
+            </span>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           SLIDE 03 — EXPERIENCE
+      ================================================= -->
+
+      <section
+        class="slide"
+        data-index="2"
+        data-name="Experience"
+      >
+
+        <div class="slide-content">
+
+          <div class="section-number">
+            02 / EXPERIENCE
+          </div>
+
+          <h2 class="section-title">
+            Experience.
+          </h2>
+
+          <div class="experience-list">
+
+            <!-- Job 1 -->
+
+            <article class="experience-item">
+
+              <div class="job-date">
+                2024 — Present
+              </div>
+
+              <div>
+
+                <h3 class="job-title">
+                  Senior Product Designer
+                </h3>
+
+                <div class="job-company">
+                  Acme Technologies
+                </div>
+
+              </div>
+
+              <p class="job-description">
+
+                Leading product design for a B2B SaaS
+                platform used by thousands of customers.
+
+              </p>
+
+            </article>
+
+
+            <!-- Job 2 -->
+
+            <article class="experience-item">
+
+              <div class="job-date">
+                2022 — 2024
+              </div>
+
+              <div>
+
+                <h3 class="job-title">
+                  Frontend Developer
+                </h3>
+
+                <div class="job-company">
+                  Studio XYZ
+                </div>
+
+              </div>
+
+              <p class="job-description">
+
+                Built scalable React applications,
+                design systems and interactive web experiences.
+
+              </p>
+
+            </article>
+
+
+            <!-- Job 3 -->
+
+            <article class="experience-item">
+
+              <div class="job-date">
+                2020 — 2022
+              </div>
+
+              <div>
+
+                <h3 class="job-title">
+                  UI/UX Designer
+                </h3>
+
+                <div class="job-company">
+                  Creative Agency
+                </div>
+
+              </div>
+
+              <p class="job-description">
+
+                Designed digital experiences for startups,
+                agencies and global brands.
+
+              </p>
+
+            </article>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           SLIDE 04 — PROJECTS
+      ================================================= -->
+
+      <section
+        class="slide"
+        data-index="3"
+        data-name="Projects"
+      >
+
+        <div class="slide-content">
+
+          <div class="section-number">
+            03 / SELECTED WORK
+          </div>
+
+          <h2 class="section-title">
+            Things I've built.
+          </h2>
+
+          <div class="project-grid">
+
+
+            <article class="project-card">
+
+              <div class="project-icon">
+
+                <i data-lucide="layers"></i>
+
+              </div>
+
+              <i
+                class="project-arrow"
+                data-lucide="arrow-up-right"
+              ></i>
+
+              <h3>
+                Design System
+              </h3>
+
+              <p>
+
+                A scalable component system that
+                unified multiple digital products.
+
+              </p>
+
+            </article>
+
+
+            <article class="project-card">
+
+              <div class="project-icon">
+
+                <i data-lucide="globe"></i>
+
+              </div>
+
+              <i
+                class="project-arrow"
+                data-lucide="arrow-up-right"
+              ></i>
+
+              <h3>
+                Portfolio Platform
+              </h3>
+
+              <p>
+
+                A fast, minimal portfolio platform
+                designed around storytelling.
+
+              </p>
+
+            </article>
+
+
+            <article class="project-card">
+
+              <div class="project-icon">
+
+                <i data-lucide="bar-chart-3"></i>
+
+              </div>
+
+              <i
+                class="project-arrow"
+                data-lucide="arrow-up-right"
+              ></i>
+
+              <h3>
+                Analytics Dashboard
+              </h3>
+
+              <p>
+
+                Data visualization tools that help
+                teams understand their business.
+
+              </p>
+
+            </article>
+
+
+            <article class="project-card">
+
+              <div class="project-icon">
+
+                <i data-lucide="bot"></i>
+
+              </div>
+
+              <i
+                class="project-arrow"
+                data-lucide="arrow-up-right"
+              ></i>
+
+              <h3>
+                AI Assistant
+              </h3>
+
+              <p>
+
+                A conversational interface designed
+                around natural interaction.
+
+              </p>
+
+            </article>
+
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           SLIDE 05 — SKILLS
+      ================================================= -->
+
+      <section
+        class="slide"
+        data-index="4"
+        data-name="Skills"
+      >
+
+        <div class="slide-content">
+
+          <div class="section-number">
+            04 / SKILLS
+          </div>
+
+          <h2 class="section-title">
+            Tools & skills.
+          </h2>
+
+          <div class="skills-layout">
+
+
+            <div>
+
+              <div class="skill-group">
+
+                <h3>
+                  Development
+                </h3>
+
+                <div class="skill-tags">
+
+                  <span class="skill">HTML</span>
+                  <span class="skill">CSS</span>
+                  <span class="skill">JavaScript</span>
+                  <span class="skill">TypeScript</span>
+                  <span class="skill">React</span>
+                  <span class="skill">Next.js</span>
+                  <span class="skill">Node.js</span>
+                  <span class="skill">Three.js</span>
+
+                </div>
+
+              </div>
+
+
+              <div class="skill-group">
+
+                <h3>
+                  Design
+                </h3>
+
+                <div class="skill-tags">
+
+                  <span class="skill">Figma</span>
+                  <span class="skill">UI Design</span>
+                  <span class="skill">UX Design</span>
+                  <span class="skill">Prototyping</span>
+                  <span class="skill">Design Systems</span>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div>
+
+              <div class="skill-group">
+
+                <h3>
+                  Other
+                </h3>
+
+                <div class="skill-tags">
+
+                  <span class="skill">Git</span>
+                  <span class="skill">REST APIs</span>
+                  <span class="skill">WebGL</span>
+                  <span class="skill">Accessibility</span>
+                  <span class="skill">Performance</span>
+                  <span class="skill">Agile</span>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           SLIDE 06 — EDUCATION
+      ================================================= -->
+
+      <section
+        class="slide"
+        data-index="5"
+        data-name="Education"
+      >
+
+        <div class="slide-content">
+
+          <div class="section-number">
+            05 / EDUCATION
+          </div>
+
+          <h2 class="section-title">
+            Education.
+          </h2>
+
+          <div class="education">
+
+
+            <div class="education-row">
+
+              <div class="education-year">
+                2016 — 2020
+              </div>
+
+              <div>
+
+                <h3>
+                  Bachelor of Design
+                </h3>
+
+                <p>
+                  National Institute of Design
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <div class="education-row">
+
+              <div class="education-year">
+                2021
+              </div>
+
+              <div>
+
+                <h3>
+                  Frontend Development
+                </h3>
+
+                <p>
+                  Advanced Web Development Certification
+                </p>
+
+              </div>
+
+            </div>
+
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           SLIDE 07 — CONTACT
+      ================================================= -->
+
+      <section
+        class="slide contact-slide"
+        data-index="6"
+        data-name="Contact"
+      >
+
+        <div class="slide-content">
+
+          <div class="section-number">
+            06 / CONTACT
+          </div>
+
+          <h2>
+            Let's make<br />
+            something.
+          </h2>
+
+          <a
+            class="contact-email"
+            href="mailto:hello@example.com"
+          >
+
+            hello@example.com
+
+          </a>
+
+          <div
+            style="
+              display:flex;
+              gap:10px;
+              margin-top:30px;
+            "
+          >
+
+            <a
+              class="icon-link"
+              href="https://github.com"
+              target="_blank"
+            >
+
+              <i data-lucide="github"></i>
+
+              GitHub
+
+            </a>
+
+            <a
+              class="icon-link"
+              href="https://linkedin.com"
+              target="_blank"
+            >
+
+              <i data-lucide="linkedin"></i>
+
+              LinkedIn
+
+            </a>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+    </main>
+
+
+    <!-- ===================================================
+         SIDE NAVIGATION
+    =================================================== -->
+
+    <nav class="side-nav">
+
+      <button
+        class="nav-dot active"
+        data-slide="0"
+        data-label="Intro"
+      ></button>
+
+      <button
+        class="nav-dot"
+        data-slide="1"
+        data-label="About"
+      ></button>
+
+      <button
+        class="nav-dot"
+        data-slide="2"
+        data-label="Experience"
+      ></button>
+
+      <button
+        class="nav-dot"
+        data-slide="3"
+        data-label="Projects"
+      ></button>
+
+      <button
+        class="nav-dot"
+        data-slide="4"
+        data-label="Skills"
+      ></button>
+
+      <button
+        class="nav-dot"
+        data-slide="5"
+        data-label="Education"
+      ></button>
+
+      <button
+        class="nav-dot"
+        data-slide="6"
+        data-label="Contact"
+      ></button>
+
+    </nav>
+
+
+    <!-- ===================================================
+         COUNTER
+    =================================================== -->
+
+    <div class="counter">
+
+      <span id="current-slide">
+        01
+      </span>
+
+      <div class="counter-line">
+
+        <div
+          class="counter-progress"
+          id="progress"
+        ></div>
+
+      </div>
+
+      <span>
+        07
+      </span>
+
+    </div>
+
+
+    <!-- ===================================================
+         SCROLL HINT
+    =================================================== -->
+
+    <div class="scroll-hint">
+
+      <i
+        class="scroll-icon"
+        data-lucide="mouse"
+        size="15"
+      ></i>
+
+      Scroll / Arrow keys
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       JAVASCRIPT
+  ===================================================== -->
+
+  <script>
+
+    /* =====================================================
+       LUCIDE
+    ===================================================== */
+
+    lucide.createIcons();
+
+
+    /* =====================================================
+       SLIDES
+    ===================================================== */
+
+    const slides =
+      [...document.querySelectorAll(".slide")];
+
+    const dots =
+      [...document.querySelectorAll(".nav-dot")];
+
+    const currentSlide =
+      document.getElementById("current-slide");
+
+    const progress =
+      document.getElementById("progress");
+
+    let current = 0;
+
+    let isAnimating = false;
+
+
+    function goToSlide(index) {
+
+      if (
+        index < 0 ||
+        index >= slides.length ||
+        isAnimating
+      ) {
+        return;
+      }
+
+      if (index === current) {
+        return;
+      }
+
+      isAnimating = true;
+
+      slides[current].classList.remove("active");
+
+      dots[current].classList.remove("active");
+
+      current = index;
+
+      slides[current].classList.add("active");
+
+      dots[current].classList.add("active");
+
+      currentSlide.textContent =
+        String(current + 1).padStart(2, "0");
+
+      progress.style.width =
+        `${((current + 1) / slides.length) * 100}%`;
+
+      setTimeout(() => {
+
+        isAnimating = false;
+
+      }, 900);
+    }
+
+
+    function nextSlide() {
+
+      if (current < slides.length - 1) {
+        goToSlide(current + 1);
+      }
+
+    }
+
+
+    function previousSlide() {
+
+      if (current > 0) {
+        goToSlide(current - 1);
+      }
+
+    }
+
+
+    /* =====================================================
+       DOT NAVIGATION
+    ===================================================== */
+
+    dots.forEach(dot => {
+
+      dot.addEventListener("click", () => {
+
+        const index =
+          Number(dot.dataset.slide);
+
+        goToSlide(index);
+
+      });
+
+    });
+
+
+    /* =====================================================
+       KEYBOARD
+    ===================================================== */
+
+    window.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key === "ArrowDown" ||
+          event.key === "ArrowRight" ||
+          event.key === " "
+        ) {
+
+          event.preventDefault();
+
+          nextSlide();
+
+        }
+
+        if (
+          event.key === "ArrowUp" ||
+          event.key === "ArrowLeft"
+        ) {
+
+          event.preventDefault();
+
+          previousSlide();
+
+        }
+
+        if (event.key === "Home") {
+
+          goToSlide(0);
+
+        }
+
+        if (event.key === "End") {
+
+          goToSlide(slides.length - 1);
+
+        }
+
+      }
+    );
+
+
+    /* =====================================================
+       MOUSE WHEEL
+    ===================================================== */
+
+    let wheelLock = false;
+
+    window.addEventListener(
+      "wheel",
+      event => {
+
+        if (wheelLock) return;
+
+        wheelLock = true;
+
+        if (event.deltaY > 0) {
+
+          nextSlide();
+
+        } else {
+
+          previousSlide();
+
+        }
+
+        setTimeout(() => {
+
+          wheelLock = false;
+
+        }, 850);
+
+      },
+      { passive: true }
+    );
+
+
+    /* =====================================================
+       TOUCH SWIPE
+    ===================================================== */
+
+    let touchStartY = 0;
+
+    let touchEndY = 0;
+
+
+    window.addEventListener(
+      "touchstart",
+      event => {
+
+        touchStartY =
+          event.changedTouches[0].screenY;
+
+      },
+      { passive: true }
+    );
+
+
+    window.addEventListener(
+      "touchend",
+      event => {
+
+        touchEndY =
+          event.changedTouches[0].screenY;
+
+        const difference =
+          touchStartY - touchEndY;
+
+        if (Math.abs(difference) < 50) {
+          return;
+        }
+
+        if (difference > 0) {
+
+          nextSlide();
+
+        } else {
+
+          previousSlide();
+
+        }
+
+      },
+      { passive: true }
+    );
+
+
+    /* =====================================================
+       INITIAL PROGRESS
+    ===================================================== */
+
+    progress.style.width =
+      `${(1 / slides.length) * 100}%`;
+
+
+    /* =====================================================
+       THREE.JS
+    ===================================================== */
+
+    const container =
+      document.getElementById("three-bg");
+
+    const scene =
+      new THREE.Scene();
+
+    const camera =
+      new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth /
+        window.innerHeight,
+        .1,
+        100
+      );
+
+    camera.position.z = 7;
+
+
+    const renderer =
+      new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true
+      });
+
+    renderer.setPixelRatio(
+      Math.min(
+        window.devicePixelRatio,
+        2
+      )
+    );
+
+    renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
+
+    container.appendChild(
+      renderer.domElement
+    );
+
+
+    /* =====================================================
+       PARTICLES
+    ===================================================== */
+
+    const particleCount = 900;
+
+    const particleGeometry =
+      new THREE.BufferGeometry();
+
+    const positions =
+      new Float32Array(
+        particleCount * 3
+      );
+
+
+    for (
+      let i = 0;
+      i < particleCount * 3;
+      i += 3
+    ) {
+
+      positions[i] =
+        (Math.random() - .5) * 18;
+
+      positions[i + 1] =
+        (Math.random() - .5) * 11;
+
+      positions[i + 2] =
+        (Math.random() - .5) * 10;
+
+    }
+
+
+    particleGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(
+        positions,
+        3
+      )
+    );
+
+
+    const particleMaterial =
+      new THREE.PointsMaterial({
+
+        color: 0xffffff,
+
+        size: .018,
+
+        transparent: true,
+
+        opacity: .4,
+
+        depthWrite: false
+
+      });
+
+
+    const particles =
+      new THREE.Points(
+        particleGeometry,
+        particleMaterial
+      );
+
+    scene.add(particles);
+
+
+    /* =====================================================
+       FLOATING WIREFRAME OBJECTS
+    ===================================================== */
+
+    const shapes = [];
+
+
+    function createShape(
+      geometry,
+      x,
+      y,
+      z,
+      scale
+    ) {
+
+      const material =
+        new THREE.MeshBasicMaterial({
+
+          color: 0xffffff,
+
+          wireframe: true,
+
+          transparent: true,
+
+          opacity: .07
+
+        });
+
+
+      const mesh =
+        new THREE.Mesh(
+          geometry,
+          material
+        );
+
+
+      mesh.position.set(
+        x,
+        y,
+        z
+      );
+
+      mesh.scale.setScalar(scale);
+
+      scene.add(mesh);
+
+      shapes.push(mesh);
+
+    }
+
+
+    createShape(
+      new THREE.IcosahedronGeometry(
+        1,
+        1
+      ),
+      -5,
+      2,
+      -3,
+      1.2
+    );
+
+
+    createShape(
+      new THREE.TorusGeometry(
+        1,
+        .3,
+        12,
+        32
+      ),
+      5,
+      -2,
+      -4,
+      1.2
+    );
+
+
+    createShape(
+      new THREE.OctahedronGeometry(
+        1,
+        0
+      ),
+      3,
+      3,
+      -2,
+      .8
+    );
+
+
+    /* =====================================================
+       MOUSE PARALLAX
+    ===================================================== */
+
+    let mouseX = 0;
+    let mouseY = 0;
+
+    let targetX = 0;
+    let targetY = 0;
+
+
+    window.addEventListener(
+      "mousemove",
+      event => {
+
+        mouseX =
+          (event.clientX /
+            window.innerWidth) -
+          .5;
+
+        mouseY =
+          (event.clientY /
+            window.innerHeight) -
+          .5;
+
+      }
+    );
+
+
+    /* =====================================================
+       ANIMATION
+    ===================================================== */
+
+    const clock =
+      new THREE.Clock();
+
+
+    function animate() {
+
+      requestAnimationFrame(
+        animate
+      );
+
+
+      const time =
+        clock.getElapsedTime();
+
+
+      /* Particles */
+
+      particles.rotation.y =
+        time * .015;
+
+      particles.rotation.x =
+        Math.sin(time * .1) * .03;
+
+
+      /* Mouse */
+
+      targetX =
+        mouseX * .35;
+
+      targetY =
+        mouseY * .25;
+
+
+      particles.position.x +=
+        (targetX -
+          particles.position.x) *
+        .01;
+
+      particles.position.y +=
+        (-targetY -
+          particles.position.y) *
+        .01;
+
+
+      /* Floating shapes */
+
+      shapes.forEach(
+        (shape, index) => {
+
+          shape.rotation.x +=
+            .001 +
+            index * .0004;
+
+          shape.rotation.y +=
+            .002 +
+            index * .0005;
+
+          shape.position.y +=
+            Math.sin(
+              time * .5 +
+              index
+            ) * .0007;
+
+        }
+      );
+
+
+      renderer.render(
+        scene,
+        camera
+      );
+
+    }
+
+
+    animate();
+
+
+    /* =====================================================
+       RESIZE
+    ===================================================== */
+
+    window.addEventListener(
+      "resize",
+      () => {
+
+        camera.aspect =
+          window.innerWidth /
+          window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+          window.innerWidth,
+          window.innerHeight
+        );
+
+      }
+    );
+
+  </script>
+
+</body>
+</html>
